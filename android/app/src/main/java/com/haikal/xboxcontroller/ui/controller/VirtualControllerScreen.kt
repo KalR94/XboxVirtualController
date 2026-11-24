@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +76,15 @@ fun VirtualControllerScreen(
     val debugLog by viewModel.debugLog.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val haptics = LocalHapticFeedback.current
+
+    DisposableEffect(viewModel, localTesting) {
+        if (localTesting) {
+            viewModel.stopConnection()
+        } else {
+            viewModel.startConnection()
+        }
+        onDispose { viewModel.stopConnection() }
+    }
 
     val hapticTick: () -> Unit = {
         if (settings.hapticsEnabled) {
