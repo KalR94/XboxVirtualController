@@ -1,0 +1,2 @@
+pytest
+rich  # optional — monitor falls back to plain print without it

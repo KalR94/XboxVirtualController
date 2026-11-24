@@ -1,0 +1,16 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk.idsig
+
+# Windows
+windows/.venv/
+windows/__pycache__/
+windows/.pytest_cache/
+**/__pycache__/
+
+# misc
+.DS_Store
