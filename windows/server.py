@@ -18,17 +18,29 @@ from typing import Callable, Optional
 from connection_manager import ConnectionManager
 from controller_state import ControllerState
 from input_parser import ParseError, parse_payload
+from virtual_pad import VirtualPad, is_available as pad_available
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 
 
 class BridgeServer:
-    def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
+    def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
+                 use_virtual_pad: bool = False):
         self.host = host
         self.port = port
         self.manager = ConnectionManager()
         self.state = ControllerState()
+        self.use_virtual_pad = use_virtual_pad
+        self.pad: Optional[VirtualPad] = None
+        if use_virtual_pad:
+            if pad_available():
+                self.pad = VirtualPad()
+            else:
+                raise RuntimeError(
+                    "Virtual pad requested but vgamepad/ViGEmBus is unavailable "
+                    "(needs Windows; on the PC run: pip install vgamepad)"
+                )
         self._state_lock = threading.Lock()
         self._stop = threading.Event()
         self._server_sock: Optional[socket.socket] = None
@@ -124,6 +136,12 @@ class BridgeServer:
             diff = old.diff(new_state)
         self.manager.mark_message(cid, new_state.summary())
         self.manager.ack(cid, seq)
+        if self.pad is not None:
+            try:
+                self.pad.apply(new_state)
+            except Exception as e:  # never break the bridge on pad errors
+                if self.on_error:
+                    self.on_error(cid, f"virtual pad: {e}")
         if self.on_input:
             self.on_input(cid, new_state, diff)
 
@@ -143,7 +161,20 @@ class BridgeServer:
 
 
 def main():
-    server = BridgeServer()
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Xbox Virtual Controller bridge")
+    ap.add_argument("--pad", action="store_true",
+                    help="create a virtual Xbox 360 controller (ViGEmBus) and "
+                         "forward received input to it — for Xenia/games")
+    ap.add_argument("--port", type=int, default=DEFAULT_PORT)
+    args = ap.parse_args()
+
+    try:
+        server = BridgeServer(use_virtual_pad=args.pad, port=args.port)
+    except RuntimeError as e:
+        print(f"ERROR: {e}")
+        raise SystemExit(1)
     from monitor import Monitor
 
     monitor = Monitor(server)
@@ -152,8 +183,12 @@ def main():
     server.on_connect = monitor.on_connect
     server.on_disconnect = monitor.on_disconnect
     server.start()
+    if server.pad is not None:
+        monitor.log("Virtual Xbox 360 controller ACTIVE (ViGEmBus) — visible to Xenia/games as XInput pad.")
     monitor.log(f"Bridge listening on {server.host}:{server.port} — waiting for Android clients")
-    monitor.log("No physical Xbox console integration: input is received and displayed only.")
+    if server.pad is None:
+        monitor.log("No virtual pad: input is received and displayed only "
+                    "(run with --pad to feed Xenia/games).")
     try:
         monitor.run()
     except KeyboardInterrupt:

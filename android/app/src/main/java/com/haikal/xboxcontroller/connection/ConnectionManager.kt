@@ -31,7 +31,6 @@ class ConnectionManager(
         const val RATE_LIMIT_HZ = 60
         const val RATE_LIMIT_INTERVAL_MS = 1000L / RATE_LIMIT_HZ
         const val MAX_BACKOFF_MS = 8_000L
-        const val MAX_RECONNECT_ATTEMPTS = 8
     }
 
     private val _status = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
@@ -93,12 +92,6 @@ class ConnectionManager(
                     client = null
                     _lastError.value = e.message ?: e.javaClass.simpleName
                     if (manuallyDisconnected) return@launch
-                    if (reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
-                        _status.value = ConnectionStatus.Failed(
-                            "Could not reach bridge at $host:$port — ${_lastError.value}",
-                        )
-                        return@launch
-                    }
                     reconnectAttempt++
                     val backoff = backoffDelayMs(reconnectAttempt)
                     _status.value = ConnectionStatus.Retrying(reconnectAttempt, backoff)

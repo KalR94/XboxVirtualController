@@ -20,7 +20,8 @@ class ParseError(ValueError):
     """Raised when a payload is not a valid controller_input message."""
 
 
-BUTTON_NAMES = ("A", "B", "X", "Y", "LB", "RB", "View", "Menu", "Guide", "L3", "R3")
+BUTTON_NAMES = ("A", "B", "X", "Y", "LB", "RB", "View", "Menu", "Guide", "L3", "R3",
+                "Up", "Down", "Left", "Right")
 
 
 def _clamp(value: float, low: float, high: float) -> float:

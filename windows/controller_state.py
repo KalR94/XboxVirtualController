@@ -11,7 +11,8 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Optional
 
 
-BUTTON_NAMES = ("A", "B", "X", "Y", "LB", "RB", "View", "Menu", "Guide", "L3", "R3")
+BUTTON_NAMES = ("A", "B", "X", "Y", "LB", "RB", "View", "Menu", "Guide", "L3", "R3",
+                "Up", "Down", "Left", "Right")  # Up/Down/Left/Right = D-Pad
 
 
 @dataclass

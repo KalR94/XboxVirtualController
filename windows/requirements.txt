@@ -1,2 +1,2 @@
-pytest
-rich  # optional — monitor falls back to plain print without it
+pytest>=8,<9
+vgamepad>=0.1,<0.2 ; sys_platform == "win32"
